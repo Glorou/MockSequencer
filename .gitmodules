@@ -1,0 +1,3 @@
+[submodule "ImSequencer"]
+	path = ImSequencer
+	url = https://github.com/Glorou/ImSequencer.git

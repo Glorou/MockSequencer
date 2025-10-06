@@ -1,0 +1,14 @@
+<Project Sdk="Dalamud.NET.Sdk/13.1.0">
+    <PropertyGroup>
+        <Version>1.0.0.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\ImSequencer\ImSequencer\ImSequencer.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DalaMock.Host" Version="3.0.7" />
+      <PackageReference Remove="DalamudPackager" />
+    </ItemGroup>
+</Project>
