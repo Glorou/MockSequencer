@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 
 namespace MockSequencer;
 
@@ -12,10 +13,14 @@ using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
 using ImSequencer;
 
+
+
 public class Plugin : HostedPlugin
 {
     public Sequencer Sequencer { get; init; }
     public List<Sequence> items;
+
+    
     public Plugin(
         IDalamudPluginInterface pluginInterface,
         IPluginLog pluginLog,
