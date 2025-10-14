@@ -15,7 +15,7 @@ using ImSequencer;
 public class Plugin : HostedPlugin
 {
     public Sequencer Sequencer { get; init; }
-    public List<Sequence> items;
+    public List<Item> items;
     public Plugin(
         IDalamudPluginInterface pluginInterface,
         IPluginLog pluginLog,
@@ -29,16 +29,25 @@ public class Plugin : HostedPlugin
         : base(pluginInterface, pluginLog, framework, commandManager, dataManager, textureProvider, chatGui, dtrBar)
     {
         Sequencer = new Sequencer(this);
-        items = new List<Sequence>();
-        var temp = new Sequence
+
+        var temp = new Item
         {
             color = 0xFF0000,
             end = 20,
             start = 0,
             type = 0,
-            expanded = true
+            expanded = false
         };
-        items.Add(temp);
+        Sequencer.items.Add(temp);
+        temp.expanded = true;
+        temp.end = 40;
+        temp.type = ItemType.Bone;
+        Sequencer.items.Add(temp);
+        temp.expanded = false;
+        temp.start = 35;
+        temp.type = ItemType.Light;
+        Sequencer.items.Add(temp);
+        Sequencer.items.Add(temp);
         pluginInterface.UiBuilder.Draw += Sequencer.Draw;
         this.CreateHost();
         this.Start();
