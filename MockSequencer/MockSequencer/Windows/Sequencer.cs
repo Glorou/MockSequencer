@@ -297,9 +297,9 @@ public class Sequencer : Window, IDisposable, SequenceInterface
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
         for (int i = 0; i < 3; i++)
         {
-            /*for (uint j = 0; j < _rampEdit.mPointCount[i]; j++)
+            for (int j = 0; j < rampEdit.GetPointCount(i); j++)
             {
-                float p = _rampEdit.mPts[i][j].X;
+                float p = rampEdit.GetPoints(i)[j].X;
                 if (p < items[index].start || p > items[index].end)
                     continue;
                 float r = (p - frameMin) / (float)(frameMax - frameMin);
@@ -307,7 +307,7 @@ public class Sequencer : Window, IDisposable, SequenceInterface
                 drawList.AddLine(new Vector2(x, customRect.Min.Y + 6), new Vector2(x, customRect.Max.Y - 4), 0xAA000000,
                     4.0f);
 
-            }*/
+            }
         }
         drawList.PopClipRect();
     }
