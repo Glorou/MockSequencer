@@ -6,6 +6,7 @@ using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.STD.Helper;
 using ImSequencer;
 using ImRect = Dalamud.Bindings.ImGui.ImRect;
+using ImCurveEdit = ImSequencer.ImCurveEdit.ImCurveEdit;
 
 namespace MockSequencer;
 
@@ -281,12 +282,13 @@ public class Sequencer : Window, IDisposable, SequenceInterface
             }
 
         }
-        
+        ImGui.SetCursorScreenPos(customRect.Min);
+        ImCurveEdit.Edit(rampEdit, customRect.Max-customRect.Min,(uint)(137+ index) );
         drawList.PopClipRect();
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
-        ImGui.SetCursorScreenPos(customRect.Min);
+
         
-        ImSequencer.ImCurveEdit.ImCurveEdit.Edit(rampEdit, customRect.Max-customRect.Min,(uint)(137+ index) );
+
         drawList.PopClipRect();
         
     }
