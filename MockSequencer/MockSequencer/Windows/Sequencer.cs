@@ -41,17 +41,17 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
     public new bool focused = false;
     public Vector2 ScreenMin;
     public Vector2 ScreenMax;
-    public Vector2 ScreenRange;
-    public Vector2 Min;
-    public Vector2 Max;
-    public Vector2 Range;
+    public new Vector2 ScreenRange;
+    public new Vector2 Min = new Vector2(0f, 0f);
+    public new Vector2 Max = new Vector2(200f, 1f);
+    public new Vector2 Range;
     
     public RampEdit()
     {
         mPts = new List<List<Vector2>>();
         mPts.Add(new List<Vector2>
         {
-            new Vector2(10f, 0f),
+            new Vector2(0.5f, 0.6f),
             new Vector2(20f,0.6f),
             new Vector2(25f, 0.2f),
             new Vector2(70f, 0.4f),
@@ -60,7 +60,7 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
 
         mPts.Add(new List<Vector2>
         {
-            new Vector2(-50f, 0.2f),
+            new Vector2(0.5f, 0.6f),
             new Vector2(33f, 0.7f),
             new Vector2(80f, 0.2f),
             new Vector2(82, 0.8f)
@@ -283,6 +283,7 @@ public class Sequencer : Window, IDisposable, SequenceInterface
 
         }
         ImGui.SetCursorScreenPos(customRect.Min);
+        rampEdit.Range = new Vector2(customRect.Min.X, customRect.Max.X);
         ImCurveEdit.Edit(rampEdit, customRect.Max-customRect.Min,(uint)(137+ index) );
         drawList.PopClipRect();
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
