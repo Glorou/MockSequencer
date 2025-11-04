@@ -5,6 +5,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.STD.Helper;
 using ImSequencer;
+using ImSequencer.Memory;
 using ImRect = Dalamud.Bindings.ImGui.ImRect;
 using ImCurveEdit = ImSequencer.ImCurveEdit.ImCurveEdit;
 
@@ -18,13 +19,15 @@ public struct Item
     public int end;
     public ItemType type; //switch this to enum later
     public bool expanded;
+    public unsafe object* reference;
 
-    public Item(ItemType _type, int _start, int _end, bool _expanded)
+    public unsafe Item(ItemType _type, int _start, int _end, bool _expanded, object* _reference = null)
     {
         start = _start;
         end = _end;
         type = _type;
         expanded = _expanded;
+        reference = _reference;
     }
     //public Item(int _type, int _start, int _end, bool _expanded) => Item((ItemType)_type, _start, _end, expanded);
 }
@@ -38,18 +41,10 @@ public enum ItemType
 public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
 {
     
-    public new bool focused = false;
-    public Vector2 ScreenMin;
-    public Vector2 ScreenMax;
-    public new Vector2 ScreenRange;
-    public new Vector2 Min = new Vector2(0f, 0f);
-    public new Vector2 Max = new Vector2(200f, 1f);
-    public new Vector2 Range;
-    
     public RampEdit()
     {
-        mPts = new List<List<Vector2>>();
-        mPts.Add(new List<Vector2>
+        mPts = new UnsafeList<UnsafeList<Vector2>>();
+        mPts.Add(new UnsafeList<Vector2>
         {
             new Vector2(0.5f, 0.6f),
             new Vector2(20f,0.6f),
@@ -58,7 +53,7 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
             new Vector2(120f, 1f)
         });
 
-        mPts.Add(new List<Vector2>
+        mPts.Add(new UnsafeList<Vector2>
         {
             new Vector2(0.5f, 0.6f),
             new Vector2(33f, 0.7f),
@@ -66,7 +61,7 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
             new Vector2(82, 0.8f)
         });
 
-        mPts.Add(new List<Vector2>
+        mPts.Add(new UnsafeList<Vector2>
         {
             new Vector2(40f, 0f),
             new Vector2(60f, 0.1f),
@@ -77,7 +72,7 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
         });
     }
 
-    private List<List<Vector2>> mPts = [];
+    private UnsafeList<UnsafeList<Vector2>> mPts = [];
     
     public override int GetCurveCount()
     {
@@ -105,32 +100,34 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
         
     }
 
-    public override List<Vector2> GetPoints(int curveIndex)
+    public override UnsafeList<Vector2> GetPoints(int curveIndex)
     {
-        return mPts[curveIndex];
+        return mPts.At(curveIndex);
     }
 
     public override int EditPoint(int curveIndex, int pointIndex, Vector2 value)
     {
-        mPts[curveIndex][pointIndex] = value;
+        Vector2* temp = mPts.At(curveIndex).GetPointer(pointIndex);
+        temp->X =  value.X;
+        temp->Y =  value.Y;
         return 1;
     }
 
     public override void AddPoint(int curveIndex, Vector2 value)
     {
-        mPts[curveIndex][mPts[curveIndex].Count] = value;
+        mPts.At(curveIndex).Add(value);
     }
 }
 
 
-public class Sequencer : Window, IDisposable, SequenceInterface
+public unsafe class Sequencer : Window, IDisposable, SequenceInterface
 {
     private Plugin Plugin;
 
     private int frameMin = 0;
     private int frameMax = 200;
-    public List<Item> items = new List<Item>();
-    
+    public UnsafeList<Item> items = [];
+
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
     // but for ImGui the ID is "My Amazing Window##With a hidden ID"
@@ -181,7 +178,7 @@ public class Sequencer : Window, IDisposable, SequenceInterface
 
     public int GetFrameMax() => frameMax;
 
-    public int GetItemCount() => items.Count;
+    public int GetItemCount() => items.Size;
 
     public void BeginEdit(int index)
     {
@@ -205,13 +202,12 @@ public class Sequencer : Window, IDisposable, SequenceInterface
         return $"{frameCount.ToString()} frames / {sequenceCount.ToString()} entries";
     }
 
-    public void Get(int index, out int start, out int end, out int type, out uint color)
+    public  void Get(int index, int** start, int** end, int* type, uint* color)
     {
-
-        start = items[index].start;
-        end = items[index].end;
-        type = (int)items[index].type;
-        color = items[index].color;
+        if (start != null) *start = &items.Data[index].start;
+        if (end != null) *end = &items.Data[index].end;
+        if (type != null) *type = (int)items[index].type;
+        if (color != null) *color = 0xFFAA8080;
     }
 
     public void Add(int index)
@@ -250,15 +246,19 @@ public class Sequencer : Window, IDisposable, SequenceInterface
     public void DoubleClick(int index)
     {
 
-        var item = items[index];
-        if (item.expanded)
+        var item = items.GetPointer(index);
+        if (item->expanded)
         {
-            item.expanded = false;
+            item->expanded = false;
             return;
         }
-        
-        items.ForEach((i) => { i.expanded = false;});
-        item.expanded = true;
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var at = items.GetPointer(i);
+            at->expanded = false;
+        }
+        item->expanded = true;
             
     }
 
@@ -283,6 +283,7 @@ public class Sequencer : Window, IDisposable, SequenceInterface
 
         }
         ImGui.SetCursorScreenPos(customRect.Min);
+        drawList.AddRect(customRect.Min, customRect.Max, 0xFFAABBCC);
         rampEdit.Range = new Vector2(customRect.Min.X, customRect.Max.X);
         ImCurveEdit.Edit(rampEdit, customRect.Max-customRect.Min,(uint)(137+ index) );
         drawList.PopClipRect();

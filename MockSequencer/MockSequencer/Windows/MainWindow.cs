@@ -58,7 +58,7 @@ public class MainWindow : Window
     public unsafe override void Draw()
     {
 
-        /*float* pCameraview = stackalloc float[16];
+        float* pCameraview = stackalloc float[16];
         float* pCameraprojection = stackalloc float[16];
         float* pobjectMatrix = stackalloc float[64];
         
@@ -70,16 +70,16 @@ public class MainWindow : Window
             {
                 pobjectMatrix[i] = objectMatrix[j][i];
             }
-        }*/
+        }
 
         
         //ImGuizmo.DrawCubes(pCameraview, pCameraprojection, pobjectMatrix, 4);
         
         //ImViewGuizmo.ImViewGuizmo.;
 
-        //ImGuizmo.DrawCubes()
-        
-        
+        //ImGuizmo.DrawCubes();
+
+
     }
     
 }
