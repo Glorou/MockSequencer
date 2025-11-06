@@ -43,45 +43,33 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
     
     public RampEdit()
     {
-        mPts = new UnsafeList<UnsafeList<Vector2>>();
-        mPts.Add(new UnsafeList<Vector2>
+        var temp = new Random();
+        
+        mPts =  new Vector2[3][];
+        
+        for (var i = 0; i < 3; i++)
         {
-            new Vector2(0.5f, 0.6f),
-            new Vector2(20f,0.6f),
-            new Vector2(25f, 0.2f),
-            new Vector2(70f, 0.4f),
-            new Vector2(120f, 1f)
-        });
+            mPts[i] = new Vector2[3];
+            for (var j = 0; j < 3; j++)
+            {
+                
+                mPts[i][j] = new Vector2(5f * (j+i), temp.NextSingle() % 1);
+            }
+        }
 
-        mPts.Add(new UnsafeList<Vector2>
-        {
-            new Vector2(0.5f, 0.6f),
-            new Vector2(33f, 0.7f),
-            new Vector2(80f, 0.2f),
-            new Vector2(82, 0.8f)
-        });
 
-        mPts.Add(new UnsafeList<Vector2>
-        {
-            new Vector2(40f, 0f),
-            new Vector2(60f, 0.1f),
-            new Vector2(90f, 0.82f),
-            new Vector2(150f, 0.24f),
-            new Vector2(200f, 0.34f),
-            new Vector2(250f, 0.12f)
-        });
     }
 
-    private UnsafeList<UnsafeList<Vector2>> mPts = [];
+    private Vector2[][] mPts;
     
     public override int GetCurveCount()
     {
-        return mPts.Count;
+        return mPts.Length;
     }
 
     public override int GetPointCount(int curveIndex)
     {
-        return mPts[curveIndex].Count;
+        return mPts[curveIndex].Length;
     }
 
     public override uint GetCurveColor(int curveIndex)
@@ -100,22 +88,20 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
         
     }
 
-    public override UnsafeList<Vector2> GetPoints(int curveIndex)
+    public override Vector2[] GetPoints(int curveIndex)
     {
-        return mPts.At(curveIndex);
+        return mPts[curveIndex];
     }
 
     public override int EditPoint(int curveIndex, int pointIndex, Vector2 value)
     {
-        Vector2* temp = mPts.At(curveIndex).GetPointer(pointIndex);
-        temp->X =  value.X;
-        temp->Y =  value.Y;
+        mPts[curveIndex][pointIndex] = value;
         return 1;
     }
 
     public override void AddPoint(int curveIndex, Vector2 value)
     {
-        mPts.At(curveIndex).Add(value);
+        return;
     }
 }
 
@@ -141,7 +127,12 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
         };
         
         Plugin = plugin;
-        rampEdit = new RampEdit();
+        rampEdit = new Dictionary<int, RampEdit>();
+        for (var i = 0; i < 4; i++)
+        {
+            var temp = new RampEdit();
+            rampEdit.Add(i, temp);
+        }
     }
 
     public void Dispose() { }
@@ -149,7 +140,7 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
     private bool _expanded = true;
     private int _currFrame;
     private int _firstFrame;
-    public RampEdit rampEdit;
+    public Dictionary<int, RampEdit> rampEdit;
 
     public override void Draw()
     {
@@ -266,9 +257,13 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
         int index, ImDrawListPtr drawList, ImRect customRect, ImRect legendRect, ImRect clippingRect,
         ImRect legendClippingRect)
     {
+        if (!rampEdit.TryGetValue(index, out var ramp))
+        {
+            return;
+        };
         var labels = new[] { "Translation", "Rotation" , "Scale"};
-        rampEdit.Max = new Vector2(frameMax, 1f);
-        rampEdit.Min = new Vector2(frameMin, 0f);
+        ramp.Max = new Vector2(items[index].end, 1f);
+        ramp.Min = new Vector2(items[index].start, 0f);
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
         for (int i = 0; i < 3; i++)
         {
@@ -284,11 +279,11 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
         }
         ImGui.SetCursorScreenPos(customRect.Min);
         drawList.AddRect(customRect.Min, customRect.Max, 0xFFAABBCC);
-        rampEdit.Range = new Vector2(customRect.Min.X, customRect.Max.X);
-        ImCurveEdit.Edit(rampEdit, customRect.Max-customRect.Min,(uint)(137+ index) );
+        ramp.Range = new Vector2(customRect.Min.X, customRect.Max.X);
+        ImCurveEdit.Edit(ramp, customRect.Max-customRect.Min,(uint)(137+ index) );
         drawList.PopClipRect();
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
-
+        rampEdit[index] = ramp;
         
 
         drawList.PopClipRect();
@@ -298,12 +293,16 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
     public void CustomDrawCompact(int index, ImDrawListPtr drawList, ImRect customRect,  ImRect clippingRect)
     {
 
+        if (!rampEdit.TryGetValue(index, out var ramp))
+        {
+            return;
+        };
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
         for (int i = 0; i < 3; i++)
         {
-            for (int j = 0; j < rampEdit.GetPointCount(i); j++)
+            for (int j = 0; j < ramp.GetPointCount(i); j++)
             {
-                float p = rampEdit.GetPoints(i)[j].X;
+                float p = ramp.GetPoints(i)[j].X;
                 if (p < items[index].start || p > items[index].end)
                     continue;
                 float r = (p - frameMin) / (float)(frameMax - frameMin);
@@ -313,6 +312,7 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
 
             }
         }
+        rampEdit[index] = ramp;
         drawList.PopClipRect();
     }
 }
