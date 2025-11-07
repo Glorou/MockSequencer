@@ -53,7 +53,7 @@ public unsafe class RampEdit : ImSequencer.ImCurveEdit.CurveContext
             for (var j = 0; j < 3; j++)
             {
                 
-                mPts[i][j] = new Vector2(5f * (j+i), temp.NextSingle() % 1);
+                mPts[i][j] = new Vector2(temp.NextSingle() % 1, temp.NextSingle() % 1);
             }
         }
 
@@ -111,7 +111,7 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
     private Plugin Plugin;
 
     private int frameMin = 0;
-    private int frameMax = 200;
+    private int frameMax = 100;
     public UnsafeList<Item> items = [];
 
     // We give this window a hidden ID using ##
@@ -262,8 +262,8 @@ public unsafe class Sequencer : Window, IDisposable, SequenceInterface
             return;
         };
         var labels = new[] { "Translation", "Rotation" , "Scale"};
-        ramp.Max = new Vector2(items[index].end, 1f);
-        ramp.Min = new Vector2(items[index].start, 0f);
+        ramp.Max = new Vector2((float)items[index].end/frameMax, 1f);
+        ramp.Min = new Vector2((float)(items[index].start-frameMin)/frameMax, 0f);
         drawList.PushClipRect(clippingRect.Min, clippingRect.Max, true);
         for (int i = 0; i < 3; i++)
         {
